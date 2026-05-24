@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — Medicine & Reminder Manager</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--border:#e5e3db;
+  --text:#1a1917;--text2:#6b6860;--text3:#9e9c96;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-bd:#bbf7d0;
+  --red:#dc2626;--red-bg:#fef2f2;--red-bd:#fecaca;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-bd:#fde68a;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-bd:#bfdbfe;
+  --accent:#1a73e8;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:14px;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--text)}
+#app{display:flex;flex-direction:column;min-height:100vh;max-width:900px;margin:0 auto;background:var(--surface);box-shadow:0 0 40px rgba(0,0,0,0.08)}
+
+.header{background:#1a1917;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.appname{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.appsub{font-size:11px;opacity:.45;margin-top:1px}
+.gtasks-btn{display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:500;color:#fff;background:rgba(255,255,255,.08);transition:background .15s;cursor:pointer}
+.gtasks-btn:hover{background:rgba(255,255,255,.15)}
+.gtasks-btn.connected{background:rgba(22,163,74,.2);border-color:rgba(22,163,74,.4);color:#86efac}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 16px;position:sticky;top:0;z-index:10}
+.tab{padding:12px 14px;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;cursor:pointer}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.main{flex:1;padding:18px 20px}
+
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.btn-pri{background:#1a1917;color:#fff;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:500;transition:background .15s;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn-pri:hover{background:#333}
+.btn-sec{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-weight:500;transition:background .15s;cursor:pointer}
+.btn-sec:hover{background:var(--border)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;font-weight:500;cursor:pointer}
+.btn-danger:hover{background:#fee2e2}
+.btn-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer}
+.btn-blue:hover{background:#dbeafe}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-n{font-size:26px;font-weight:600;letter-spacing:-.02em;font-family:'DM Mono',monospace}
+.stat-l{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.stat.g .stat-n{color:var(--green)}
+.stat.a .stat-n{color:var(--amber)}
+.stat.b .stat-n{color:var(--blue)}
+
+.ring-row{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px}
+.ring-info h3{font-size:14px;font-weight:600;margin-bottom:3px}
+.ring-info p{font-size:12px;color:var(--text2)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.card-header{padding:13px 18px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.card-date{font-size:11px;color:var(--text2);font-weight:400}
+
+.dose-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+.dose-row:last-child{border-bottom:none}
+.dose-row:hover{background:var(--surface2)}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:11px;background:none}
+.chk.taken{background:var(--green);border-color:var(--green);color:#fff}
+.chk.missed{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.dose-info{flex:1}
+.dose-name{font-weight:500;font-size:13px}
+.dose-meta{font-size:11px;color:var(--text2);margin-top:1px}
+.dose-time{font-size:12px;font-weight:500;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0}
+.pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;display:inline-block}
+.pill.taken{background:var(--green-bg);color:var(--green)}
+.pill.missed{background:var(--red-bg);color:var(--red)}
+.pill.due{background:var(--amber-bg);color:var(--amber)}
+.pill.upcoming{background:var(--blue-bg);color:var(--blue)}
+.pill.synced{background:#e8f0fe;color:#1a73e8}
+
+.med-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.med-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .15s}
+.med-card:hover{border-color:#bbb}
+.med-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.med-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.med-acts{display:flex;gap:5px;align-items:center}
+.med-name{font-weight:600;font-size:14px;margin-bottom:2px}
+.med-dose-lbl{font-size:12px;color:var(--text2)}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.tag{font-size:10px;padding:2px 8px;border-radius:99px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.tag.active{background:var(--green-bg);color:var(--green);border-color:var(--green-bd)}
+.tag.inactive{background:var(--red-bg);color:var(--red);border-color:var(--red-bd)}
+.tag.time{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)}
+.tag.synced{background:#e8f0fe;color:#1a73e8;border-color:#c5d8fb}
+.stock-row{font-size:11px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:6px}
+.stock-bar{height:3px;background:var(--border);border-radius:99px;flex:1;overflow:hidden}
+.stock-fill{height:100%;border-radius:99px}
+
+.hist-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.hist-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.hist-icon.taken{background:var(--green-bg)}
+.hist-icon.missed{background:var(--red-bg)}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.panel-hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.panel-logo{width:40px;height:40px;border-radius:10px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.panel h3{font-size:14px;font-weight:600}
+.panel p{font-size:12px;color:var(--text2);margin-top:2px}
+.feat-list{list-style:none;margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.feat-list li{font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:8px}
+.feat-list li::before{content:"✓";color:var(--green);font-weight:700;font-size:13px;flex-shrink:0;margin-top:1px}
+.scope-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);margin:10px 0;word-break:break-all}
+.success-box{background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--green);margin:10px 0;display:flex;align-items:center;gap:6px}
+.info-box{background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--blue);margin:10px 0}
+.warn-box{background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--amber);margin:10px 0}
+
+.form-grp{margin-bottom:14px}
+.form-lbl{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.form-inp{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;outline:none;transition:border .15s;background:var(--surface);color:var(--text)}
+.form-inp:focus{border-color:#1a1917;outline:none}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.times-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.time-chip{display:flex;align-items:center;gap:4px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:99px;padding:3px 10px;font-size:12px;color:var(--blue)}
+.time-chip button{color:var(--blue);font-size:14px;line-height:1;padding:0;background:none;border:none;cursor:pointer}
+.col-swatches{display:flex;gap:6px;flex-wrap:wrap}
+.col-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .1s}
+.col-swatch.selected{border-color:var(--text);transform:scale(1.2)}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hdr{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-x{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px;cursor:pointer;background:none;border:none}
+.modal-x:hover{background:var(--surface2)}
+.modal-body{padding:18px 20px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1917;color:#fff;border-radius:var(--radius-sm);padding:10px 16px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;max-width:300px;animation:toastIn .2s ease}
+@keyframes toastIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.empty{text-align:center;padding:44px 20px;color:var(--text2)}
+.empty-icon{font-size:44px;opacity:.3;margin-bottom:10px}
+.empty h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.empty p{font-size:13px}
+
+.alert-low{background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius);padding:12px 16px;margin-top:12px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo">💊</div>
+      <div>
+        <div class="appname">MedTrack</div>
+        <div class="appsub">Medicine &amp; Reminder Manager</div>
+      </div>
+    </div>
+    <button class="gtasks-btn" id="gtBtn" onclick="handleHeaderBtn()">
+      <div class="dot"></div>
+      <span id="gtLabel">Connect Google Tasks</span>
+    </button>
+  </div>
+
+  <nav class="nav">
+    <button class="tab active" onclick="goTab('today',this)">📋 Today</button>
+    <button class="tab" onclick="goTab('medicines',this)">💊 Medicines</button>
+    <button class="tab" onclick="goTab('history',this)">📈 History</button>
+    <button class="tab" onclick="goTab('settings',this)">⚙️ Settings</button>
+  </nav>
+
+  <div class="main" id="mc"></div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+// STEP 1: Replace the value below with your Google Client ID
+// Get it from: https://console.cloud.google.com
+// (See the instructions in Settings tab for full walkthrough)
+const GOOGLE_CLIENT_ID = '840605986163-a5kt0pr8mjiu3jbfh22hbnspb34pr3so.apps.googleusercontent.com';
+// ─────────────────────────────────────────────────────────
+
+const COLORS = ['#1a73e8','#e85d26','#16a34a','#d97706','#7c3aed','#db2777','#0891b2','#dc2626'];
+const ICONS  = ['💊','💉','🩺','🫀','🧬','🩹','🏥','🌡️'];
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MEALS  = ['with meals','before meals','after meals','empty stomach','any time'];
+
+let S = {
+  meds: [
+    {id:1,name:'Metformin',dosage:'500mg',times:['08:00','20:00'],days:[0,1,2,3,4,5,6],color:'#1a73e8',icon:'💊',notes:'',category:'Diabetes',stock:28,maxStock:30,active:true,withMeal:'with meals',taskListId:null},
+    {id:2,name:'Vitamin D3',dosage:'1000 IU',times:['09:00'],days:[0,1,2,3,4,5,6],color:'#d97706',icon:'🌡️',notes:'',category:'Supplement',stock:45,maxStock:60,active:true,withMeal:'with meals',taskListId:null},
+    {id:3,name:'Lisinopril',dosage:'10mg',times:['07:00'],days:[0,1,2,3,4,5,6],color:'#e85d26',icon:'🫀',notes:'Blood pressure',category:'Cardiac',stock:12,maxStock:30,active:true,withMeal:'empty stomach',taskListId:null},
+  ],
+  history: [],
+  settings: {notifMin:15, browserNotif:true},
+  gtConnected: false,
+  gtToken: null,
+  nextId: 4,
+  activeTab: 'today'
+};
+
+function save(){try{localStorage.setItem('medtrack_v4', JSON.stringify(S));}catch(e){}}
+function load(){try{const d=localStorage.getItem('medtrack_v4');if(d){const p=JSON.parse(d);S={...S,...p};}}catch(e){}}
+load();
+
+const today   = () => new Date().toISOString().split('T')[0];
+const nowMin  = () => { const n=new Date(); return n.getHours()*60+n.getMinutes(); };
+const toMin   = t  => { const[h,m]=t.split(':').map(Number); return h*60+m; };
+const fmtTime = t  => { const[h,m]=t.split(':'); const hh=parseInt(h); return `${hh>12?hh-12:(hh||12)}:${m} ${hh>=12?'PM':'AM'}`; };
+const todayDI = () => new Date().getDay();
+
+// ── DOSE LOGIC ───────────────────────────────────────────
+function getTodayDoses(){
+  const di=todayDI(), doses=[];
+  S.meds.forEach(med=>{
+    if(!med.active || !med.days.includes(di)) return;
+    med.times.forEach(time=>{
+      const key=`${today()}_${med.id}_${time}`;
+      const rec=S.history.find(h=>h.key===key);
+      let status=rec?rec.status:'upcoming';
+      if(status==='upcoming'){
+        const diff=toMin(time)-nowMin();
+        if(diff<0 && diff>-120) status='missed';
+        else if(diff>=0 && diff<=30) status='due';
+      }
+      doses.push({med,time,key,status});
+    });
+  });
+  return doses.sort((a,b)=>toMin(a.time)-toMin(b.time));
+}
+
+function markDose(key, medId, time, status){
+  const i=S.history.findIndex(h=>h.key===key);
+  const rec={key,medId,time,date:today(),status,ts:Date.now()};
+  if(i>=0) S.history[i]=rec; else S.history.push(rec);
+  save(); render();
+  toast(status==='taken'?'✅ Dose marked as taken':'⏭ Dose skipped');
+  if(status==='taken' && S.gtConnected && S.gtToken) completeTaskForDose(medId,time);
+}
+
+function getStats(){
+  const doses=getTodayDoses();
+  const taken=doses.filter(d=>d.status==='taken').length;
+  const missed=doses.filter(d=>d.status==='missed').length;
+  return{taken,missed,total:doses.length,upcoming:doses.length-taken-missed};
+}
+
+// ── TAB ROUTING ──────────────────────────────────────────
+function goTab(tab, btn){
+  S.activeTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else document.querySelectorAll('.tab').forEach(t=>{ if(t.textContent.toLowerCase().includes(tab.substring(0,3))) t.classList.add('active'); });
+  render();
+}
+
+function render(){
+  const el=document.getElementById('mc'); if(!el) return;
+  if(S.activeTab==='today')     el.innerHTML=renderToday();
+  else if(S.activeTab==='medicines') el.innerHTML=renderMeds();
+  else if(S.activeTab==='history')   el.innerHTML=renderHistory();
+  else if(S.activeTab==='settings')  el.innerHTML=renderSettings();
+  updateBtn();
+}
+
+// ── TODAY ────────────────────────────────────────────────
+function renderToday(){
+  const doses=getTodayDoses(), stats=getStats();
+  const pct=stats.total?Math.round((stats.taken/stats.total)*100):0;
+  const d=new Date(), dateStr=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const R=24, C=2*Math.PI*R;
+  let html=`
+  <div class="ring-row">
+    <svg width="60" height="60" viewBox="0 0 60 60" style="flex-shrink:0">
+      <circle cx="30" cy="30" r="${R}" fill="none" stroke="#e5e3db" stroke-width="5"/>
+      <circle cx="30" cy="30" r="${R}" fill="none" stroke="${pct===100?'#16a34a':'#1a73e8'}" stroke-width="5"
+        stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct/100)}"
+        stroke-linecap="round" transform="rotate(-90 30 30)"/>
+      <text x="30" y="35" text-anchor="middle" font-size="12" font-weight="600"
+        fill="${pct===100?'#16a34a':'#1a1917'}" font-family="DM Mono,monospace">${pct}%</text>
+    </svg>
+    <div class="ring-info">
+      <h3>${pct===100?'All doses taken! 🎉':'Daily progress'}</h3>
+      <p>${stats.taken} of ${stats.total} doses taken today</p>
+      ${stats.missed?`<p style="color:var(--red);margin-top:2px">${stats.missed} missed</p>`:''}
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat g"><div class="stat-n">${stats.taken}</div><div class="stat-l">Taken</div></div>
+    <div class="stat a"><div class="stat-n">${stats.upcoming}</div><div class="stat-l">Upcoming</div></div>
+    <div class="stat b"><div class="stat-n">${stats.total}</div><div class="stat-l">Today</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">Today's schedule <span class="card-date">${dateStr}</span></div>`;
+
+  if(!doses.length){
+    html+=`<div class="empty"><div class="empty-icon">🌙</div><h3>No medicines today</h3><p>Add medicines in the Medicines tab</p></div>`;
+  } else {
+    doses.forEach(d=>{
+      const lbl=d.status==='taken'?'Taken':d.status==='missed'?'Missed':d.status==='due'?'Due now':'Upcoming';
+      const synced=S.gtConnected && d.med.taskListId;
+      html+=`<div class="dose-row">
+        <button class="chk ${d.status==='taken'?'taken':d.status==='missed'?'missed':''}"
+          onclick="markDose('${d.key}',${d.med.id},'${d.time}','taken')" title="Mark as taken">
+          ${d.status==='taken'?'✓':d.status==='missed'?'✗':''}
+        </button>
+        <div class="dose-info">
+          <div class="dose-name">${d.med.icon} ${d.med.name}
+            <span style="font-weight:400;color:var(--text2);font-size:11px"> ${d.med.dosage}</span>
+          </div>
+          <div class="dose-meta">${[d.med.withMeal,d.med.notes].filter(Boolean).join(' · ')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="dose-time">${fmtTime(d.time)}</span>
+          <div style="display:flex;gap:3px">
+            <span class="pill ${d.status}">${lbl}</span>
+            ${synced?'<span class="pill synced">📋</span>':''}
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  html+=`</div>`;
+
+  const low=S.meds.filter(m=>m.active && m.stock<=7);
+  if(low.length) html+=`<div class="alert-low">
+    <strong>⚠️ Low stock alert:</strong>
+    <span style="color:var(--text2)"> ${low.map(m=>`${m.name} (${m.stock} left)`).join(', ')}</span>
+  </div>`;
+  return html;
+}
+
+// ── MEDICINES ────────────────────────────────────────────
+function renderMeds(){
+  let html=`<div class="sec-header">
+    <div class="sec-title">My Medicines</div>
+    <button class="btn-pri" onclick="openAdd()">+ Add Medicine</button>
+  </div>`;
+  if(!S.meds.length) return html+`<div class="empty"><div class="empty-icon">💊</div><h3>No medicines yet</h3><p>Tap "+ Add Medicine" to get started</p></div>`;
+  html+=`<div class="med-grid">`;
+  S.meds.forEach(med=>{
+    const sp=Math.round((med.stock/med.maxStock)*100);
+    const sc=sp>40?'#16a34a':sp>20?'#d97706':'#dc2626';
+    const timeDays=med.days.length===7?'Every day':med.days.map(d=>DAYS[d]).join(', ');
+    html+=`<div class="med-card">
+      <div class="med-top">
+        <div class="med-icon" style="background:${med.color}22">${med.icon}</div>
+        <div class="med-acts">
+          ${S.gtConnected && !med.taskListId
+            ? `<button class="btn-blue" onclick="syncMedToTasks(${med.id})">📋 Sync</button>`
+            : ''}
+          <button class="btn-sec" style="padding:4px 8px;font-size:11px" onclick="openEdit(${med.id})">Edit</button>
+          <button class="btn-danger" style="padding:4px 8px" onclick="delMed(${med.id})">✕</button>
+        </div>
+      </div>
+      <div class="med-name">${med.name}</div>
+      <div class="med-dose-lbl">${med.dosage} · ${med.category||'General'}</div>
+      <div class="tags">
+        <span class="tag ${med.active?'active':'inactive'}">${med.active?'Active':'Paused'}</span>
+        ${med.times.map(t=>`<span class="tag time">⏰ ${fmtTime(t)}</span>`).join('')}
+        ${med.withMeal?`<span class="tag">🍽 ${med.withMeal}</span>`:''}
+        <span class="tag">${timeDays}</span>
+        ${med.taskListId?`<span class="tag synced">📋 In Tasks</span>`:''}
+      </div>
+      <div class="stock-row">
+        <span>${med.stock}/${med.maxStock} pills</span>
+        <div class="stock-bar"><div class="stock-fill" style="width:${sp}%;background:${sc}"></div></div>
+      </div>
+    </div>`;
+  });
+  return html+`</div>`;
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+function renderHistory(){
+  const last14=[], t=today();
+  for(let i=0;i<14;i++){const d=new Date();d.setDate(d.getDate()-i);last14.push(d.toISOString().split('T')[0]);}
+  let html=`<div class="sec-header"><div class="sec-title">History (last 14 days)</div></div>`;
+  const grp={};
+  S.history.forEach(h=>{if(last14.includes(h.date)){if(!grp[h.date])grp[h.date]=[];grp[h.date].push(h);}});
+  if(!Object.keys(grp).length) return html+`<div class="empty"><div class="empty-icon">📋</div><h3>No history yet</h3><p>Start marking your doses today</p></div>`;
+  last14.forEach(date=>{
+    if(!grp[date]) return;
+    const ents=grp[date];
+    const taken=ents.filter(e=>e.status==='taken').length;
+    const dd=new Date(date+'T12:00:00');
+    const lbl=date===t?'Today':dd.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>${lbl}</span>
+        <span style="color:${taken===ents.length?'var(--green)':'var(--amber)'}">${taken}/${ents.length} taken</span>
+      </div>
+      <div class="hist-list">`;
+    ents.sort((a,b)=>toMin(a.time)-toMin(b.time)).forEach(e=>{
+      const med=S.meds.find(m=>m.id===e.medId); if(!med) return;
+      html+=`<div class="hist-row">
+        <div class="hist-icon ${e.status}">${e.status==='taken'?'✅':'❌'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${med.name} ${med.dosage}</div>
+          <div style="font-size:11px;color:var(--text2)">${fmtTime(e.time)}</div>
+        </div>
+        <span class="pill ${e.status}">${e.status}</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  return html;
+}
+
+// ── SETTINGS ─────────────────────────────────────────────
+function renderSettings(){
+  const s=S.settings;
+  const clientOk = GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID';
+  return `<div class="sec-title" style="margin-bottom:16px">Settings &amp; Integrations</div>
+
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-logo">📋</div>
+      <div>
+        <h3>Google Tasks</h3>
+        <p>${S.gtConnected?'Connected — medicines synced to Google Tasks':'Not connected'}</p>
+      </div>
+    </div>
+    <ul class="feat-list">
+      <li>Each medicine gets its own task list in Google Tasks</li>
+      <li>Every dose time becomes a task with a due date &amp; time</li>
+      <li>Marking a dose taken also completes it in Google Tasks</li>
+      <li>Tasks appear in Gmail sidebar, Google Calendar &amp; the Tasks mobile app</li>
+    </ul>
+
+    ${!clientOk ? `
+      <div class="warn-box">
+        ⚠️ <strong>Client ID not set yet.</strong> Open this HTML file in Notepad,
+        find <code>YOUR_GOOGLE_CLIENT_ID</code> and replace it with your real Client ID.
+        See the step-by-step guide below.
+      </div>
+    ` : ''}
+
+    ${S.gtConnected ? `
+      <div class="success-box">✅ <strong>Connected!</strong> Your medicines are syncing to Google Tasks.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn-blue" onclick="syncAllToTasks()">🔄 Re-sync all medicines</button>
+        <button class="btn-danger" onclick="disconnectGT()">Disconnect</button>
+      </div>
+    ` : `
+      <div class="scope-box">Permission requested: https://www.googleapis.com/auth/tasks</div>
+      <button class="btn-pri" onclick="connectGT()" style="width:100%;justify-content:center" ${!clientOk?'disabled title="Set your Client ID first"':''}>
+        📋 Connect Google Tasks
+      </button>
+    `}
+  </div>
+
+  <div class="panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">📖 How to get a Google Client ID (free, one-time)</h3>
+    <ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text2)">
+      <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a> — sign in with your Google account</li>
+      <li>Click <strong style="color:var(--text)">"Select a project"</strong> at the top → <strong style="color:var(--text)">"New Project"</strong> → name it anything (e.g. "MedTrack") → click <strong style="color:var(--text)">Create</strong></li>
+      <li>In the left menu: <strong style="color:var(--text)">APIs &amp; Services → Library</strong> → search <strong style="color:var(--text)">"Google Tasks API"</strong> → click it → click <strong style="color:var(--text)">Enable</strong></li>
+      <li>Go to <strong style="color:var(--text)">APIs &amp; Services → OAuth consent screen</strong> → choose <strong style="color:var(--text)">External</strong> → click Create → fill in your App name and email → click <strong style="color:var(--text)">Save and Continue</strong> three times</li>
+      <li>Go to <strong style="color:var(--text)">APIs &amp; Services → Credentials</strong> → click <strong style="color:var(--text)">+ Create Credentials → OAuth 2.0 Client ID</strong></li>
+      <li>Application type: <strong style="color:var(--text)">Web application</strong> → name it anything</li>
+      <li>Under <strong style="color:var(--text)">"Authorized JavaScript origins"</strong> → click Add URI → type: <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">http://localhost</code> (also add <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">null</code> if opening as a file)</li>
+      <li>Click <strong style="color:var(--text)">Create</strong> → copy the <strong style="color:var(--text)">Client ID</strong> (looks like <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:11px">123456-abc...apps.googleusercontent.com</code>)</li>
+      <li>Open this HTML file in Notepad → find <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">YOUR_GOOGLE_CLIENT_ID</code> → replace it with your Client ID → save → reopen in browser</li>
+    </ol>
+    <div class="info-box" style="margin-top:14px">
+      💡 <strong>Tip:</strong> You only need to do this once. After saving the Client ID, just open the file in your browser and click "Connect Google Tasks".
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🔔 Reminder settings</h3>
+    <div class="form-grp">
+      <label class="form-lbl">Remind me before each dose</label>
+      <select class="form-inp" onchange="S.settings.notifMin=parseInt(this.value);save()">
+        ${[5,10,15,30,60].map(n=>`<option value="${n}" ${s.notifMin===n?'selected':''}>${n} minutes before</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:500">Browser pop-up notifications</div>
+        <div style="font-size:12px;color:var(--text2)">Works without Google account</div>
+      </div>
+      <button onclick="toggleNotif()" style="background:${s.browserNotif?'#1a1917':'var(--border)'};color:${s.browserNotif?'#fff':'var(--text2)'};border-radius:99px;padding:6px 16px;font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s">
+        ${s.browserNotif?'On':'Off'}
+      </button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:8px">💾 Data</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Everything is stored locally on your computer — nothing is sent anywhere.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-sec" onclick="exportData()">📤 Export as JSON</button>
+      <button class="btn-danger" onclick="clearHist()">🗑 Clear history</button>
+    </div>
+  </div>`;
+}
+
+function toggleNotif(){
+  S.settings.browserNotif=!S.settings.browserNotif;
+  if(S.settings.browserNotif && Notification.permission==='default') Notification.requestPermission();
+  save(); render();
+}
+function clearHist(){if(confirm('Clear all dose history?')){S.history=[];save();render();toast('History cleared');}}
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='medtrack_backup.json'; a.click();
+}
+
+// ── GOOGLE TASKS AUTH ────────────────────────────────────
+function connectGT(){
+  if(GOOGLE_CLIENT_ID==='YOUR_GOOGLE_CLIENT_ID'){
+    alert('Please set your Google Client ID first.\nOpen this HTML file in Notepad, find YOUR_GOOGLE_CLIENT_ID and replace it.\nSee the instructions in Settings.');
+    return;
+  }
+  const scope='https://www.googleapis.com/auth/tasks';
+  const url=`https://accounts.google.com/o/oauth2/v2/auth`
+    +`?client_id=${GOOGLE_CLIENT_ID}`
+    +`&redirect_uri=${encodeURIComponent(window.location.href.split('#')[0])}`
+    +`&response_type=token`
+    +`&scope=${encodeURIComponent(scope)}`
+    +`&prompt=consent`;
+
+  toast('📋 Opening Google sign-in…');
+  const popup=window.open(url,'gtasks_auth','width=520,height=640,left=100,top=80');
+
+  const iv=setInterval(()=>{
+    try{
+      if(!popup || popup.closed){clearInterval(iv);return;}
+      const href=popup.location.href;
+      if(href.includes('access_token')){
+        clearInterval(iv);
+        const hash=popup.location.hash||popup.location.search;
+        const ps=new URLSearchParams(hash.replace(/^[#?]/,''));
+        const token=ps.get('access_token');
+        if(token){
+          S.gtConnected=true; S.gtToken=token;
+          save(); popup.close(); render(); updateBtn();
+          toast('✅ Google Tasks connected!');
+          syncAllToTasks();
+        }
+      }
+    }catch(e){}
+  },600);
+}
+
+function disconnectGT(){
+  if(!confirm('Disconnect Google Tasks? Task lists already created in Google Tasks will remain there.')) return;
+  S.gtConnected=false; S.gtToken=null;
+  S.meds.forEach(m=>m.taskListId=null);
+  save(); render(); updateBtn();
+  toast('Google Tasks disconnected');
+}
+
+function handleHeaderBtn(){
+  if(S.gtConnected) disconnectGT();
+  else { goTab('settings',null); }
+}
+
+function updateBtn(){
+  const btn=document.getElementById('gtBtn'), lbl=document.getElementById('gtLabel');
+  if(!btn) return;
+  if(S.gtConnected){btn.className='gtasks-btn connected'; lbl.textContent='Tasks Connected';}
+  else{btn.className='gtasks-btn'; lbl.textContent='Connect Google Tasks';}
+}
+
+// ── GOOGLE TASKS API ─────────────────────────────────────
+async function apiTasks(path, method='GET', body=null){
+  const opts={
+    method,
+    headers:{'Authorization':`Bearer ${S.gtToken}`,'Content-Type':'application/json'}
+  };
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(`https://tasks.googleapis.com/tasks/v1${path}`, opts);
+  if(method==='DELETE') return null;
+  const data=await r.json();
+  if(!r.ok) throw new Error(data.error?.message||'Tasks API error');
+  return data;
+}
+
+async function syncMedToTasks(medId){
+  if(!S.gtConnected||!S.gtToken){toast('Connect Google Tasks first');return;}
+  const med=S.meds.find(m=>m.id===medId); if(!med) return;
+  toast(`⏳ Syncing ${med.name}…`);
+  try{
+    const list=await apiTasks('/users/@me/lists','POST',{title:`💊 ${med.name} Reminders`});
+    med.taskListId=list.id;
+    const base=new Date();
+    for(const time of med.times){
+      const[h,mn]=time.split(':').map(Number);
+      const due=new Date(base.getFullYear(),base.getMonth(),base.getDate(),h,mn,0);
+      await apiTasks(`/lists/${list.id}/tasks`,'POST',{
+        title:`Take ${med.name} ${med.dosage}`,
+        notes:`${med.withMeal?'Instructions: '+med.withMeal+'\n':''}${med.notes?'Notes: '+med.notes+'\n':''}Reminder time: ${fmtTime(time)}`,
+        due:due.toISOString()
+      });
+    }
+    save(); render();
+    toast(`📋 ${med.name} synced to Google Tasks!`);
+  }catch(e){
+    console.error(e);
+    toast('❌ Sync failed — check console (F12)');
+  }
+}
+
+async function syncAllToTasks(){
+  if(!S.gtConnected||!S.gtToken){toast('Connect Google Tasks first');return;}
+  let count=0;
+  for(const med of S.meds){
+    if(!med.active) continue;
+    await syncMedToTasks(med.id);
+    count++;
+  }
+  toast(`✅ ${count} medicines synced to Google Tasks!`);
+}
+
+async function completeTaskForDose(medId, time){
+  const med=S.meds.find(m=>m.id===medId);
+  if(!med||!med.taskListId) return;
+  try{
+    const tasks=await apiTasks(`/lists/${med.taskListId}/tasks?showCompleted=false`);
+    if(!tasks.items) return;
+    const timeLabel=fmtTime(time);
+    const task=tasks.items.find(t=>t.title&&t.title.includes(med.name)&&(t.notes||'').includes(timeLabel));
+    if(task){
+      await apiTasks(`/lists/${med.taskListId}/tasks/${task.id}`,'PATCH',{status:'completed'});
+      toast('📋 Task completed in Google Tasks!');
+    }
+  }catch(e){console.error('Complete task error:',e);}
+}
+
+// ── MEDICINE MODAL ───────────────────────────────────────
+let editTimes=[], editDays=[], selIcon='💊', selColor=COLORS[0], editActive=true;
+
+function openAdd(){showModal(null);}
+function openEdit(id){const m=S.meds.find(x=>x.id===id);if(m)showModal(m);}
+function delMed(id){
+  if(!confirm('Delete this medicine?')) return;
+  S.meds=S.meds.filter(m=>m.id!==id); save(); render(); toast('Medicine deleted');
+}
+
+function showModal(med){
+  editTimes=med?[...med.times]:['08:00'];
+  editDays=med?[...med.days]:[0,1,2,3,4,5,6];
+  selIcon=med?med.icon:'💊'; selColor=med?med.color:COLORS[0]; editActive=med?med.active:true;
+  const isEdit=!!med;
+
+  document.getElementById('modalRoot').innerHTML=`
+  <div class="modal-overlay" id="mOverlay" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">${isEdit?'Edit Medicine':'Add Medicine'}</div>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-grp">
+          <label class="form-lbl">Medicine Name *</label>
+          <input class="form-inp" id="mn" placeholder="e.g. Metformin" value="${med?med.name:''}">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Dosage *</label>
+          <input class="form-inp" id="md" placeholder="e.g. 500mg" value="${med?med.dosage:''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-grp">
+          <label class="form-lbl">Category</label>
+          <input class="form-inp" id="mcat" placeholder="e.g. Diabetes" value="${med?med.category||'':''}">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">With / Without Meal</label>
+          <select class="form-inp" id="mmeal">
+            ${MEALS.map(x=>`<option ${med&&med.withMeal===x?'selected':''}>${x}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Reminder Times</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="time" class="form-inp" id="mti" style="flex:1">
+          <button class="btn-sec" onclick="addTime()">+ Add</button>
+        </div>
+        <div class="times-list" id="tl"></div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Days of the week</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="dayBtns">
+          ${DAYS.map((day,i)=>`<button type="button" onclick="toggleDay(${i})" id="db${i}"
+            style="width:38px;height:38px;border-radius:50%;border:1px solid var(--border);font-size:11px;font-weight:500;
+            background:${editDays.includes(i)?'#1a1917':'var(--surface)'};color:${editDays.includes(i)?'#fff':'var(--text)'};cursor:pointer"
+            >${day}</button>`).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-grp">
+          <label class="form-lbl">Current Stock (pills)</label>
+          <input type="number" class="form-inp" id="ms" value="${med?med.stock:30}" min="0">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Max Stock</label>
+          <input type="number" class="form-inp" id="mms" value="${med?med.maxStock:30}" min="1">
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Icon</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="iconPicker">
+          ${ICONS.map(ic=>`<button type="button" onclick="pickIcon('${ic}',this)"
+            style="font-size:21px;width:38px;height:38px;border-radius:8px;
+            border:2px solid ${(med?med.icon:selIcon)===ic?'#1a1917':'var(--border)'};
+            background:var(--surface);cursor:pointer">${ic}</button>`).join('')}
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Colour</label>
+        <div class="col-swatches" id="colPicker">
+          ${COLORS.map(c=>`<div class="col-swatch ${(med?med.color:selColor)===c?'selected':''}"
+            style="background:${c}" onclick="pickColor('${c}',this)"></div>`).join('')}
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Notes (optional)</label>
+        <input class="form-inp" id="mnotes" placeholder="e.g. Take with a full glass of water" value="${med?med.notes||'':''}">
+      </div>
+      ${isEdit?`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)">
+          <div>
+            <div style="font-size:13px;font-weight:500">Medicine active</div>
+            <div style="font-size:11px;color:var(--text2)">Inactive medicines won't appear in Today</div>
+          </div>
+          <button type="button" onclick="toggleActive()" id="ab"
+            style="background:${med.active?'#1a1917':'var(--border)'};color:${med.active?'#fff':'var(--text2)'};
+            border-radius:99px;padding:6px 16px;font-size:12px;font-weight:500;border:none;cursor:pointer">
+            ${med.active?'Yes':'No'}
+          </button>
+        </div>`:''}
+    </div>
+    <div class="modal-foot">
+      <button class="btn-sec" onclick="closeModal()">Cancel</button>
+      <button class="btn-pri" onclick="saveMed(${med?med.id:'null'})">${isEdit?'Save Changes':'Add Medicine'}</button>
+    </div>
+  </div></div>`;
+  renderTL();
+}
+
+function renderTL(){
+  const el=document.getElementById('tl'); if(!el) return;
+  el.innerHTML=editTimes.map(t=>`<div class="time-chip">${fmtTime(t)}
+    <button onclick="removeTime('${t}')">×</button></div>`).join('')
+    ||'<span style="font-size:11px;color:var(--text3)">No times added yet</span>';
+}
+function addTime(){
+  const i=document.getElementById('mti'); if(!i||!i.value) return;
+  if(!editTimes.includes(i.value)){editTimes.push(i.value);editTimes.sort();renderTL();}
+  i.value='';
+}
+function removeTime(t){editTimes=editTimes.filter(x=>x!==t);renderTL();}
+function toggleDay(i){
+  const idx=editDays.indexOf(i);
+  if(idx>=0) editDays.splice(idx,1); else editDays.push(i);
+  editDays.sort();
+  const b=document.getElementById('db'+i);
+  if(b){b.style.background=editDays.includes(i)?'#1a1917':'var(--surface)';b.style.color=editDays.includes(i)?'#fff':'var(--text)';}
+}
+function pickIcon(ic, btn){
+  selIcon=ic;
+  document.querySelectorAll('#iconPicker button').forEach(b=>b.style.borderColor='var(--border)');
+  btn.style.borderColor='#1a1917';
+}
+function pickColor(c, el){
+  selColor=c;
+  document.querySelectorAll('.col-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function toggleActive(){
+  editActive=!editActive;
+  const b=document.getElementById('ab');
+  if(b){b.style.background=editActive?'#1a1917':'var(--border)';b.style.color=editActive?'#fff':'var(--text2)';b.textContent=editActive?'Yes':'No';}
+}
+function saveMed(editId){
+  const name=(document.getElementById('mn')?.value||'').trim();
+  const dosage=(document.getElementById('md')?.value||'').trim();
+  if(!name){alert('Please enter a medicine name.');return;}
+  if(!dosage){alert('Please enter a dosage.');return;}
+  if(!editTimes.length){alert('Please add at least one reminder time.');return;}
+  if(!editDays.length){alert('Please select at least one day.');return;}
+  const data={
+    name, dosage,
+    times:[...editTimes], days:[...editDays],
+    color:selColor, icon:selIcon,
+    notes:document.getElementById('mnotes')?.value||'',
+    category:document.getElementById('mcat')?.value||'',
+    withMeal:document.getElementById('mmeal')?.value||'',
+    stock:parseInt(document.getElementById('ms')?.value)||30,
+    maxStock:parseInt(document.getElementById('mms')?.value)||30,
+    active:editId?editActive:true
+  };
+  if(editId){
+    const i=S.meds.findIndex(m=>m.id===editId);
+    if(i>=0) S.meds[i]={...S.meds[i],...data};
+  } else {
+    data.id=S.nextId++; data.taskListId=null;
+    S.meds.push(data);
+    if(S.gtConnected && S.gtToken) setTimeout(()=>syncMedToTasks(data.id),400);
+  }
+  save(); closeModal(); render();
+  toast(editId?'Medicine updated!':'Medicine added!');
+}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+function bgClose(e){if(e.target.id==='mOverlay') closeModal();}
+
+// ── TOAST ────────────────────────────────────────────────
+let toastTimer=null;
+function toast(msg){
+  let el=document.getElementById('toastEl');
+  if(!el){el=document.createElement('div');el.id='toastEl';el.className='toast';document.body.appendChild(el);}
+  el.textContent=msg; el.style.display='flex';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{if(el)el.style.display='none';},2800);
+}
+
+// ── BROWSER NOTIFICATIONS ────────────────────────────────
+function scheduleNotifs(){
+  if(!S.settings.browserNotif || Notification.permission!=='granted') return;
+  const nm=S.settings.notifMin||15, now=nowMin();
+  getTodayDoses().forEach(d=>{
+    if(d.status!=='upcoming' && d.status!=='due') return;
+    const diff=toMin(d.time)-now;
+    if(diff>=nm-1 && diff<=nm+1){
+      new Notification('💊 Medicine Reminder',{
+        body:`Time to take ${d.med.name} ${d.med.dosage}\nScheduled: ${fmtTime(d.time)}`,
+        tag:d.key
+      });
+    }
+  });
+}
+
+if(Notification.permission==='default') Notification.requestPermission();
+setInterval(scheduleNotifs, 60000);
+setInterval(()=>{ if(S.activeTab==='today') render(); }, 30000);
+
+// ── INIT ─────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
